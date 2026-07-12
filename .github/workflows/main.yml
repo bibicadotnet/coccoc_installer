@@ -1,0 +1,79 @@
+name: Release Cốc Cốc Versions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        url: [
+          "https://files2.coccoc.com/apps/browser/win/x64/138.0.7204.186/138.0.7204.186_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/139.0.7258.158/139.0.7258.158_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/139.0.7258.160/139.0.7258.160_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/139.0.7258.162/139.0.7258.162_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/140.0.7339.222/140.0.7339.222_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/140.0.7339.240/140.0.7339.240_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/140.0.7339.242/140.0.7339.242_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/140.0.7339.244/140.0.7339.244_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/140.0.7339.250/140.0.7339.250_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/141.0.7390.126/141.0.7390.126_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/141.0.7390.128/141.0.7390.128_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/141.0.7390.130/141.0.7390.130_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/142.0.7444.182/142.0.7444.182_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/142.0.7444.184/142.0.7444.184_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/142.0.7444.228/142.0.7444.228_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/144.0.7559.100/144.0.7559.100_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/144.0.7559.102/144.0.7559.102_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/144.0.7559.110/144.0.7559.110_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/144.0.7559.112/144.0.7559.112_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/144.0.7559.136/144.0.7559.136_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/145.0.7632.162/145.0.7632.162_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/145.0.7632.164/145.0.7632.164_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/145.0.7632.166/145.0.7632.166_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/145.0.7632.172/145.0.7632.172_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/145.0.7632.174/145.0.7632.174_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/145.0.7632.176/145.0.7632.176_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/146.0.7680.178/146.0.7680.178_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/146.0.7680.188/146.0.7680.188_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/146.0.7680.190/146.0.7680.190_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/147.0.7727.142/147.0.7727.142_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/147.0.7727.150/147.0.7727.150_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/148.0.7778.260/148.0.7778.260_coccocsetup.exe",
+          "https://files2.coccoc.com/apps/browser/win/x64/149.0.7827.206/149.0.7827.206_coccocsetup.exe"
+        ]
+      fail-fast: false
+
+    steps:
+      - name: Extract Version
+        id: extract
+        shell: bash
+        run: |
+          URL="${{ matrix.url }}"
+          VERSION=$(echo $URL | grep -oP '(?<=x64/)[^/]+')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "filename=$(basename $URL)" >> $GITHUB_OUTPUT
+
+      - name: Download File
+        run: curl -L -O ${{ matrix.url }}
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          FILENAME="${{ steps.extract.outputs.filename }}"
+          
+          if gh release view "v$VERSION" --repo ${{ github.repository }} > /dev/null 2>&1; then
+            echo "Release v$VERSION exists."
+          else
+            gh release create "v$VERSION" \
+              --title "$VERSION" \
+              --notes "$VERSION" \
+              --repo ${{ github.repository }} \
+              "$FILENAME"
+          fi
