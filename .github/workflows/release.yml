@@ -16,21 +16,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Payload API với version 0.0.0.0
+          # 1. Payload API với version 0.0.0.0
           PAYLOAD='{"request":{"@os":"win","@updater":"CocCocUpdater","acceptformat":"crx3,download,puff,run,xz,zucc","apps":[{"ap":"arch_x64","appid":"{c0cc0cbb-47dd-46ff-a04d-7011a06486e1}","brand":"XXXX","enabled":true,"installsource":"taggedmi","updatecheck":{"sameversionupdate":true},"version":"0.0.0.0"}],"arch":"x86","ismachine":true,"os":{"arch":"x86_64","platform":"Windows","version":"10.0.19044.7417"},"prodversion":"0.0.0.0","protocol":"4.0","updaterversion":"0.0.0.0","wow64":true}}'
           
-          # Gọi API
+          # 2. Gọi API lấy version
           RESPONSE=$(curl -s -X POST -H "Content-Type: application/json" -H "User-Agent: CocCocUpdater/0.0.0.0" -d "$PAYLOAD" https://update.coccoc.com/service/update2/json)
-          
-          # Trích xuất Version và URL
           VERSION=$(echo $RESPONSE | grep -oP '(?<="nextversion":")[^"]+')
-          URL=$(echo $RESPONSE | grep -oP '(?<="url":")[^"]+')
-          FILENAME=$(basename $URL)
           
-          echo "Version: $VERSION"
-          echo "URL: $URL"
+          # 3. Thay version vào URL theo cấu trúc chuẩn
+          URL="https://files2.coccoc.com/apps/browser/win/x64/$VERSION/${VERSION}_coccocsetup.exe"
+          FILENAME="${VERSION}_coccocsetup.exe"
           
-          # Kiểm tra và Release
+          echo "Version detected: $VERSION"
+          echo "Download URL: $URL"
+          
+          # 4. Kiểm tra và Release
           if gh release view "v$VERSION" --repo ${{ github.repository }} > /dev/null 2>&1; then
             echo "Release v$VERSION đã tồn tại."
           else
